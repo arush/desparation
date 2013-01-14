@@ -17,8 +17,7 @@ var BrandsFormController = function BrandsFormController($scope,HelperService,$r
 
 		// selectedTags should be replaced with user's actual stored data (currentAnswer)
 
-		$scope.assets.selectedTags = [
-		];
+		$scope.assets.selectedTags = [];
 
 
 	/***** END CONTROLLER PROPERTIES ******/

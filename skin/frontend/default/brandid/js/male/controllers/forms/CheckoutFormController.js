@@ -19,7 +19,7 @@ var CheckoutFormController = function CheckoutFormController($scope,$location,Da
 		user 				: $scope.currentUser,
 		transactionType		: "billing",
 		currency			: "GBP",
-		subdomain			: "hackbrandid",
+		subdomain			: HelperService.getRecurlySubdomain(),
 		params : { // these are the params to sign
 			account : {
 				account_code: accountCode

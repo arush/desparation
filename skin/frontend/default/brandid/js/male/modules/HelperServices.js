@@ -132,9 +132,6 @@ angular.module('HelperServices', [])
 	        if(environment === "www") {
 		      // LIVE connection to Intercom
 		      app_id = "myporahm";
-		    } else if(environment === "hack") {
-		      // DEV connection to Intercom
-		      app_id = "2eqflc09";
 		    } else {
 		      // LOCAL connection to Intercom
 		      app_id = "2eqflc09";
@@ -214,6 +211,22 @@ angular.module('HelperServices', [])
 
 			return complete;
 
+		},
+
+		getRecurlySubdomain: function() {
+			var subdomain;
+
+			var environment = this.getEnvironment();
+	        
+	      if(environment === "www") {
+		      // LIVE connection to Intercom
+		      subdomain = "brandid";
+		    } else {
+		      // LOCAL connection to Intercom
+		      subdomain = "hackbrandid";
+		    }
+
+			return subdomain;
 		},
 
 		countCompletedAnswers: function(answers) {

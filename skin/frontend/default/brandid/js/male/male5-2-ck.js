@@ -29686,9 +29686,6 @@ angular.module('HelperServices', [])
 	        if(environment === "www") {
 		      // LIVE connection to Intercom
 		      app_id = "myporahm";
-		    } else if(environment === "hack") {
-		      // DEV connection to Intercom
-		      app_id = "2eqflc09";
 		    } else {
 		      // LOCAL connection to Intercom
 		      app_id = "2eqflc09";
@@ -29768,6 +29765,22 @@ angular.module('HelperServices', [])
 
 			return complete;
 
+		},
+
+		getRecurlySubdomain: function() {
+			var subdomain;
+
+			var environment = this.getEnvironment();
+	        
+	      if(environment === "www") {
+		      // LIVE connection to Intercom
+		      subdomain = "brandid";
+		    } else {
+		      // LOCAL connection to Intercom
+		      subdomain = "hackbrandid";
+		    }
+
+			return subdomain;
 		},
 
 		countCompletedAnswers: function(answers) {
@@ -30260,8 +30273,7 @@ var BrandsFormController = function BrandsFormController($scope,HelperService,$r
 
 		// selectedTags should be replaced with user's actual stored data (currentAnswer)
 
-		$scope.assets.selectedTags = [
-		];
+		$scope.assets.selectedTags = [];
 
 
 	/***** END CONTROLLER PROPERTIES ******/
@@ -30670,7 +30682,7 @@ var CheckoutFormController = function CheckoutFormController($scope,$location,Da
 		user 				: $scope.currentUser,
 		transactionType		: "billing",
 		currency			: "GBP",
-		subdomain			: "hackbrandid",
+		subdomain			: HelperService.getRecurlySubdomain(),
 		params : { // these are the params to sign
 			account : {
 				account_code: accountCode
@@ -30855,7 +30867,7 @@ var Recurlyjs = angular.module('recurlyjs', [])
 			// set up Recurlyjs globals
 
 			Recurly.config({
-					subdomain: scope.payload.subdomain
+				subdomain: scope.payload.subdomain
 				, currency: scope.payload.currency
 			});
 

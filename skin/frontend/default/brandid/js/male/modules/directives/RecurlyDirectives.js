@@ -17,7 +17,7 @@ var Recurlyjs = angular.module('recurlyjs', [])
 			// set up Recurlyjs globals
 
 			Recurly.config({
-					subdomain: scope.payload.subdomain
+				subdomain: scope.payload.subdomain
 				, currency: scope.payload.currency
 			});
 
