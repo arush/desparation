@@ -18,9 +18,6 @@ angular.module('DataServices', [])
     if(environment === "www") {
       // initialise LIVE connection to Parse
       Parse.initialize("cWsBzcLQQMy80sF7KOYWPkeVKDxshxQWUwWk1b27", "rhu8oSmv0Z7qms57HNvJaLlwpc9Mkl2kjIefkTXl");
-    } else if(environment === "hack") {
-      // intitialise HACK connection to Parse
-      Parse.initialize("FSjSiuBpXRS5vSeDVLlhbiraR2jkfH4D9HkFFzzu", "I8ZQlxqbAkSWn5oJq4YNHSvMEgT87hYy5r0cA3jV");
     } else {
       // intitialise TEST connection to Parse
       Parse.initialize("oB4lSEsDL1MuJbLiTe4pHQbNvCJAzfu4nUMdsLL2", "LZ88ABUjZ0l92Nogc3TlCWRlGeKWBkqOXWw382hu");
