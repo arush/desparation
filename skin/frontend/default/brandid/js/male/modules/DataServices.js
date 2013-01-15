@@ -444,19 +444,26 @@ angular.module('DataServices', [])
       
       fetchUser: function(user,scope) {
 
+        var deferred = $q.defer();
+
         user.fetch({
           success: function (results) {
             
             // we wrap this in $apply using the correct scope passed in because we always need angular to recognise changes
             scope.$apply(function() {
-              user = results;
+              deferred.resolve(user);
             });
           },
           error: function (results,error) {
+              
               console.log(results);
               console.log(error);
+
+              deferred.reject(error);
           }
         });
+
+        return deferred.promise;
 
       },
 

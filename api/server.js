@@ -78,10 +78,10 @@
 
   app.post('/recurly/sign', auth, function(req, res) {
     var params, signature;
-    console.dir('received request to /recurly/sign of' + req.body);
+    console.log('received request to /recurly/sign of' + req.body);
     params = req.body;
     signature = recurlyjs.sign(params, recurlyKeys.PRIVATE_KEY);
-    console.dir('generated signature ' + signature);
+    console.log('generated signature ' + signature);
     res.contentType("text/plain");
     return res.send(signature, 200);
   });
@@ -90,7 +90,7 @@
     var intercom_payload;
     intercom_payload = req.body;
     return intercom.users.put(intercom_payload, function(code, body) {
-      console.log(code, body);
+      console.log('Updated user in intercom.io, got status: ' + code);
       res.contentType("application/json");
       return res.send(body, code);
     });
@@ -104,22 +104,23 @@
       if (!__hasProp.call(recurlyPush, attr)) continue;
       value = recurlyPush[attr];
       if (attr === 'successful_payment_notification') {
-        console.dir('Found a successful_payment_notification!');
+        console.log('Found a successful_payment_notification!');
         res.contentType("application/json");
         _results.push(res.send('done', 200));
       } else if (attr === 'new_account_notification') {
-        console.dir('Found a new_account_notification!');
+        console.log('Found a new_account_notification!');
         accountCode = recurlyPush.new_account_notification.account[0].account_code[0];
+        console.log('got the accountCode: ' + accountCode);
         _results.push(recurly.accounts.get(accountCode, function(data) {
           var intercom_payload;
-          console.log(data);
           if (data.status === "ok") {
+            console.log('Successfully retrieved the account data from Recurly');
             intercom_payload = {
               email: accountCode,
               "Card on File": true
             };
             intercom.users.put(intercom_payload, function(code, body) {
-              return console.log(code, body);
+              return console.log('Sent accountCode and \'Card on File\' :true to intercom.io, got status: ' + code);
             });
             return parse.updateUser({
               email: accountCode
@@ -127,26 +128,51 @@
               recurlyAccountCode: accountCode
             }, function(err, user) {
               if (err == null) {
-                console.dir(user);
+                console.log('Successfully sent Recurly accountCode to Parse');
                 res.send(user);
                 return res.send(200);
               } else {
-                console.dir('Error trying to retrieve user from Parse, assumed dead.');
-                console.dir(err);
+                console.log('Error trying to update user in Parse, assumed dead.');
+                console.log(err);
                 res.contentType("application/json");
                 res.send(err);
-                return res.send(200);
+                return res.send(500);
               }
             });
           }
         }));
       } else if (attr === 'billing_info_updated_notification') {
-        console.dir('Found a billing_info_updated_notification!');
+        console.log('Found a billing_info_updated_notification!');
         accountCode = recurlyPush.billing_info_updated_notification.account[0].account_code[0];
+        console.log('got the accountCode: ' + accountCode);
         _results.push(recurly.accounts.get(accountCode, function(data) {
+          var intercom_payload;
           if (data.status === "ok") {
-            res.contentType("application/json");
-            return res.send(data, 200);
+            console.log('Successfully retrieved the account data from Recurly');
+            intercom_payload = {
+              email: accountCode,
+              "Card on File": true
+            };
+            intercom.users.put(intercom_payload, function(code, body) {
+              return console.log('Sent accountCode and \'Card on File\' :true to intercom.io, got status: ' + code);
+            });
+            return parse.updateUser({
+              email: accountCode
+            }, {
+              recurlyAccountCode: accountCode
+            }, function(err, user) {
+              if (err == null) {
+                console.log('Successfully sent Recurly accountCode to Parse');
+                res.send(user);
+                return res.send(200);
+              } else {
+                console.log('Error trying to update user in Parse, assumed dead.');
+                console.log(err);
+                res.contentType("application/json");
+                res.send(err);
+                return res.send(500);
+              }
+            });
           }
         }));
       } else {
@@ -204,18 +230,20 @@
         replace_interests: true,
         send_welcome: false
       };
-      console.dir(payload);
       mcapi.listSubscribe(payload, function(error, data) {
         if (error == null) {
+          console.log('Successfully subscribed user to Mailchimp');
           res.contentType("application/json");
           return res.send(200, JSON.stringify(data));
         } else {
+          res.contentType("application/json");
+          res.send(500, JSON.stringify(data));
+          console.log('Error subscribing user to Mailchimp');
           return console.log(error);
         }
       });
-      console.dir(intercom_payload);
       return intercom.users.post(intercom_payload, function(code, body) {
-        return console.log(code, body);
+        return console.log('Tried to create a new user in intercom.io with payload, got status: ' + code);
       });
     }
   });

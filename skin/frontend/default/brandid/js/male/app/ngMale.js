@@ -45,7 +45,7 @@ ngMaleApp.run(['$rootScope', '$locale','$routeParams', 'DataService', 'HelperSer
   // ***** CONTROLLER PROPERTIES ***** //
     
     $locale.id = "en-gb";
-
+    
 
     $rootScope.drawerOpen = false;
 

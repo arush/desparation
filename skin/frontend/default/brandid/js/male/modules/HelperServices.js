@@ -174,7 +174,7 @@ angular.module('HelperServices', [])
 		},
 		setIntercomLoggedOutSettings: function(user) {
 	        var intercomAppId = this.getIntercomAppId();
-			intercomSettings = {
+					intercomSettings = {
 	            // TODO: The current logged in user's email address.
 	            email: "guest",
 	            // TODO: The current logged in user's sign-up date as a Unix timestamp.

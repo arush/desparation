@@ -118,6 +118,8 @@ var QuestionController = function QuestionController($scope,$routeParams,DataSer
 				} else {
 
 					var account_code = $scope.currentUser.get("recurlyAccountCode");
+				
+
 					// check if we already have credit card on file, if so redirect to success page
 					if(typeof(account_code) !== "undefined") {
 						// TODO: look up valid credit card info from recurly
@@ -126,14 +128,14 @@ var QuestionController = function QuestionController($scope,$routeParams,DataSer
 						var newPath = '/section/' + $routeParams.section + '/category/' + $routeParams.category + '/question/' + questionDecider;
 						$location.path(newPath);
 
-						break;
+						break; // break out of the switch statement
 
 					} else {
 						// no credit card on file
 						questionDecider = 'checkout';
-					}
-					
-				}
+					};
+				
+				};
 				
 				$scope.detailTemplate = 'section/' + $routeParams.section + '/category/generic/question/' + questionDecider + '.html';
 				break;

@@ -26339,7 +26339,7 @@ ngMaleApp.run(['$rootScope', '$locale','$routeParams', 'DataService', 'HelperSer
   // ***** CONTROLLER PROPERTIES ***** //
     
     $locale.id = "en-gb";
-
+    
 
     $rootScope.drawerOpen = false;
 
@@ -29411,19 +29411,26 @@ angular.module('DataServices', [])
       
       fetchUser: function(user,scope) {
 
+        var deferred = $q.defer();
+
         user.fetch({
           success: function (results) {
             
             // we wrap this in $apply using the correct scope passed in because we always need angular to recognise changes
             scope.$apply(function() {
-              user = results;
+              deferred.resolve(user);
             });
           },
           error: function (results,error) {
+              
               console.log(results);
               console.log(error);
+
+              deferred.reject(error);
           }
         });
+
+        return deferred.promise;
 
       },
 
@@ -29728,7 +29735,7 @@ angular.module('HelperServices', [])
 		},
 		setIntercomLoggedOutSettings: function(user) {
 	        var intercomAppId = this.getIntercomAppId();
-			intercomSettings = {
+					intercomSettings = {
 	            // TODO: The current logged in user's email address.
 	            email: "guest",
 	            // TODO: The current logged in user's sign-up date as a Unix timestamp.
@@ -30063,6 +30070,8 @@ var QuestionController = function QuestionController($scope,$routeParams,DataSer
 				} else {
 
 					var account_code = $scope.currentUser.get("recurlyAccountCode");
+				
+
 					// check if we already have credit card on file, if so redirect to success page
 					if(typeof(account_code) !== "undefined") {
 						// TODO: look up valid credit card info from recurly
@@ -30071,14 +30080,14 @@ var QuestionController = function QuestionController($scope,$routeParams,DataSer
 						var newPath = '/section/' + $routeParams.section + '/category/' + $routeParams.category + '/question/' + questionDecider;
 						$location.path(newPath);
 
-						break;
+						break; // break out of the switch statement
 
 					} else {
 						// no credit card on file
 						questionDecider = 'checkout';
-					}
-					
-				}
+					};
+				
+				};
 				
 				$scope.detailTemplate = 'section/' + $routeParams.section + '/category/generic/question/' + questionDecider + '.html';
 				break;
@@ -30713,17 +30722,32 @@ var CheckoutFormController = function CheckoutFormController($scope,$location,Da
 
 	$scope.receiveRecurlyToken = function(recurly_token) {
 		
-		// update user with recurly data from Parse (data gets pushed to Parse from recurly automatically during payment)
-		DataService.fetchUser($scope.currentUser, $scope);
-
-		var newLocation = '#/section/' + $routeParams.section + '/category/' + $routeParams.category + '/question/success';
-
 		// track
 		var metricsPayload = {'B4.1_Funnel': $routeParams.category};
 	    HelperService.metrics.track('Registered Credit Card', metricsPayload);
-	    // TODO: add intercom
 
-	    window.location = newLocation;
+		// update user with recurlyAccountCode, which is always their email address
+		// Even though Recurly sets it in Parse via push noty, there could be a delay or data loss that way, so we set it here also just to be safe 
+		DataService.setToUser($scope.currentUser, "recurlyAccountCode", $scope.currentUser.get("email"));
+		
+
+		var promise = DataService.saveUser($scope.currentUser, $scope);
+
+		promise.then(function(user) {
+
+			$scope.currentUser = user;
+
+			var newLocation = '#/section/' + $routeParams.section + '/category/' + $routeParams.category + '/question/success';
+		
+		    window.location = newLocation;
+
+
+		}, function(reason) {
+			// something went wrong in the API call, so init new object
+			console.log("Could not fetch user after adding credit card");
+			console.log(reason);
+			// male_answers.boxers = new Boxers();
+		});
 
 	};
 

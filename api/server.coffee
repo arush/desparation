@@ -68,12 +68,12 @@ app.get '/', (req, res) ->
 	res.send '<h1>No entry for you mofo!</h1>', 200
 
 app.post '/recurly/sign', auth, (req, res) ->
-	console.dir 'received request to /recurly/sign of' + req.body
+	console.log 'received request to /recurly/sign of' + req.body
 	params = req.body
 	signature = recurlyjs.sign(params, recurlyKeys.PRIVATE_KEY)
 
-	console.dir 'generated signature ' + signature
-	
+	console.log 'generated signature ' + signature
+
 	res.contentType "text/plain"
 	res.send signature, 200
 
@@ -83,7 +83,8 @@ app.post '/answers/update', auth, (req, res) ->
 	intercom_payload = req.body
 
 	intercom.users.put intercom_payload, (code, body) ->
-		console.log code, body
+		# console.log code, body
+		console.log 'Updated user in intercom.io, got status: ' + code
 		res.contentType "application/json"
 		res.send body, code
 
@@ -94,26 +95,30 @@ app.post '/recurly/push', auth, (req, res) ->
 
 	for own attr, value of recurlyPush
 		if attr is 'successful_payment_notification'
-			console.dir 'Found a successful_payment_notification!'
+			console.log 'Found a successful_payment_notification!'
 			res.contentType "application/json"
 			res.send 'done', 200
+
+		# TODO: refactor, it is the same code used in for billing_info_updated
 		else if attr is 'new_account_notification'
-			console.dir 'Found a new_account_notification!'
+			console.log 'Found a new_account_notification!'
 
 			# best practice - make sure the user is actually in Recurly (this push noty may be old)
 			accountCode = recurlyPush.new_account_notification.account[0].account_code[0]
+			console.log 'got the accountCode: ' + accountCode
 
 			recurly.accounts.get accountCode, (data) ->
-				console.log data
 				if data.status is "ok"
-					
+					console.log 'Successfully retrieved the account data from Recurly'
+
 					# update intercom
 					intercom_payload = 
 						email : accountCode
 						"Card on File" : true
 
 					intercom.users.put intercom_payload, (code, body) ->
-						console.log code, body
+						# console.log code, body
+						console.log 'Sent accountCode and \'Card on File\' :true to intercom.io, got status: ' + code
 
 					# update Parse with recurly account_code (assuming Parse email == recurly accountCode anyway)
 					# we need to do this because users in Parse without recurlyAccountCode are assumed not to have card on file
@@ -124,33 +129,63 @@ app.post '/recurly/push', auth, (req, res) ->
 						unless err?
 							# update parse on success, else send error message
 							# parse.update
-							console.dir user
+							# console.dir user
+							console.log 'Successfully sent Recurly accountCode to Parse'
 
 							res.send user
 							res.send 200
 						else
-							console.dir 'Error trying to retrieve user from Parse, assumed dead.'
-							console.dir err
+							console.log 'Error trying to update user in Parse, assumed dead.'
+							console.log err
 							res.contentType "application/json"
 
 							res.send err
-							res.send 200
+							res.send 500
 
 
 
 		else if attr is 'billing_info_updated_notification'
-			console.dir 'Found a billing_info_updated_notification!'
+			console.log 'Found a billing_info_updated_notification!'
 
 			# best practice - make sure the user is actually in Recurly (this push noty may be old)
 			accountCode = recurlyPush.billing_info_updated_notification.account[0].account_code[0]
+			console.log 'got the accountCode: ' + accountCode
 
+			# TODO: refactor, it is the same code used in new_account_notification above
 			recurly.accounts.get accountCode, (data) ->
-				# console.log data
 				if data.status is "ok"
-					# update Parse with recurly account_code, but also assuming account_code is the Parse email address
+					console.log 'Successfully retrieved the account data from Recurly'
 
-					res.contentType "application/json"
-					res.send data, 200
+					# update intercom
+					intercom_payload = 
+						email : accountCode
+						"Card on File" : true
+
+					intercom.users.put intercom_payload, (code, body) ->
+						# console.log code, body
+						console.log 'Sent accountCode and \'Card on File\' :true to intercom.io, got status: ' + code
+
+					# update Parse with recurly account_code (assuming Parse email == recurly accountCode anyway)
+					# we need to do this because users in Parse without recurlyAccountCode are assumed not to have card on file
+
+					parse.updateUser email: accountCode,
+						recurlyAccountCode: accountCode
+					, (err, user) ->
+						unless err?
+							# update parse on success, else send error message
+							# parse.update
+							# console.dir user
+							console.log 'Successfully sent Recurly accountCode to Parse'
+
+							res.send user
+							res.send 200
+						else
+							console.log 'Error trying to update user in Parse, assumed dead.'
+							console.log err
+							res.contentType "application/json"
+
+							res.send err
+							res.send 500
 
 app.post '/user/new', auth, (req, res) ->
 
@@ -206,7 +241,7 @@ app.post '/user/new', auth, (req, res) ->
 			replace_interests : true
 			send_welcome : false
 
-		console.dir payload
+		# console.dir payload
 
 
 		# MAILCHIMP API CALL
@@ -214,18 +249,24 @@ app.post '/user/new', auth, (req, res) ->
 		mcapi.listSubscribe payload,
 			(error, data) ->
 				unless error?
+					console.log 'Successfully subscribed user to Mailchimp'
 					res.contentType "application/json"
 					res.send 200, JSON.stringify data
-				else console.log error
+				else
+					res.contentType "application/json"
+					res.send 500, JSON.stringify data
+					console.log 'Error subscribing user to Mailchimp'
+					console.log error
 
 		## INTERCOM.IO ##
 
-		console.dir intercom_payload
+		# console.dir intercom_payload
 
 		# this is a POST not a PUT because this happens at Parse registration, the users' browser probably hasn't reloaded yet
 		# this is poor design, should really check if the user exists there or not
 		intercom.users.post intercom_payload, (code, body) ->
-			console.log code, body
+			# console.log code, body
+			console.log 'Tried to create a new user in intercom.io with payload, got status: ' + code
 
 app.listen port, ->
 	console.log "Listening on #{port}"
